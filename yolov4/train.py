@@ -7,7 +7,7 @@ import torch.backends.cudnn as cudnn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-
+import os
 from nets.yolo4 import YoloBody
 from nets.yolo_training import LossHistory, YOLOLoss, weights_init
 from utils.dataloader import YoloDataset, yolo_dataset_collate
@@ -136,11 +136,10 @@ def fit_one_epoch(net,yolo_loss,epoch,epoch_size,epoch_size_val,gen,genval,Epoch
     print('Epoch:'+ str(epoch+1) + '/' + str(Epoch))
     print('Total Loss: %.4f || Val Loss: %.4f ' % (total_loss/(epoch_size+1),val_loss/(epoch_size_val+1)))
     print('Saving state, iter:', str(epoch+1))
-    if epoch == 20:
-        torch.save(model.state_dict(), '/project/train/models/final/Epoch%d-Total_Loss%.4f-Val_Loss%.4f.pth'%((epoch+1),total_loss/(epoch_size+1),val_loss/(epoch_size_val+1)))
-    
-    else:
-        torch.save(model.state_dict(), '/project/train/models/mymodels/Epoch%d-Total_Loss%.4f-Val_Loss%.4f.pth'%((epoch+1),total_loss/(epoch_size+1),val_loss/(epoch_size_val+1)))
+    path_mymodel= '/project/train/models/mymodels-1/'
+    if not os.path.exists(path_mymodel):
+        os.makedirs(path_mymodel)
+    torch.save(model.state_dict(), '/project/train/models/mymodels-1/Epoch%d-Total_Loss%.4f-Val_Loss%.4f.pth'%((epoch+1),total_loss/(epoch_size+1),val_loss/(epoch_size_val+1)))
 
 #----------------------------------------------------#
 #   检测精度mAP和pr曲线计算参考视频
@@ -201,15 +200,15 @@ if __name__ == "__main__":
     #------------------------------------------------------#
     #   权值文件请看README，百度网盘下载
     #------------------------------------------------------#
-    model_path = "/project/train/src_repo/yolov4/model_data/yolo4_voc_weights.pth"
-    print('Loading weights into state dict...')
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model_dict = model.state_dict()
-    pretrained_dict = torch.load(model_path, map_location=device)
-    pretrained_dict = {k: v for k, v in pretrained_dict.items() if np.shape(model_dict[k]) ==  np.shape(v)}
-    model_dict.update(pretrained_dict)
-    model.load_state_dict(model_dict)
-    print('Finished!')
+    # model_path = "/project/train/src_repo/yolov4/model_data/yolo4_voc_weights.pth"
+    # print('Loading weights into state dict...')
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # model_dict = model.state_dict()
+    # pretrained_dict = torch.load(model_path, map_location=device)
+    # pretrained_dict = {k: v for k, v in pretrained_dict.items() if np.shape(model_dict[k]) ==  np.shape(v)}
+    # model_dict.update(pretrained_dict)
+    # model.load_state_dict(model_dict)
+    # print('Finished!')
 
     net = model.train()
 
@@ -263,10 +262,10 @@ if __name__ == "__main__":
     #------------------------------------------------------#
     if True:
         lr              = 1e-3
-        Batch_size      = 16
+        Batch_size      = 4
         Init_Epoch      = 0
-        Freeze_Epoch    = 20
-        
+        Freeze_Epoch    = 50
+        print("1 stage training")
         #----------------------------------------------------------------------------#
         #   我在实际测试时，发现optimizer的weight_decay起到了反作用，
         #   所以去除掉了weight_decay，大家也可以开起来试试，一般是weight_decay=5e-4
@@ -302,8 +301,8 @@ if __name__ == "__main__":
     if True:
         lr              = 1e-4
         Batch_size      = 2
-        Freeze_Epoch    = 20
-        Unfreeze_Epoch  = 20
+        Freeze_Epoch    = 50
+        Unfreeze_Epoch  = 100
 
         #----------------------------------------------------------------------------#
         #   我在实际测试时，发现optimizer的weight_decay起到了反作用，
